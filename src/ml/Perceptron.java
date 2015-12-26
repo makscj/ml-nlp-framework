@@ -41,6 +41,39 @@ public class Perceptron {
 		return weight;
 	}
 	
+	public static Vector trainAverageClassifier(ArrayList<Vector> data, int epochs, double rate)
+	{
+		int data_dimension = data.get(0).size();
+		
+		//Initialize a random weight vector.
+		Vector weight = new Vector(data_dimension);
+		double[] average = new double[data_dimension];
+		
+		//Loop through the data 'epochs' times. 
+		for(int epoch = 0; epoch < epochs; epoch++)
+		{
+			//Shuffle the data for each epoch.
+			data = Util.shuffle(data);
+			//Loop through each example
+			for(Vector x : data)
+			{
+				double y = x.getLabel();
+				//Check if we made a mistake, if so we update the weight vector.
+				if(y*weight.transpose(x) <= 0)
+				{
+					weight = perceptronUpdate(x, weight, rate, y);
+					
+				}
+				for(int i = 0; i < data_dimension; i++)
+				{
+					average[i] += weight.get(i);
+				}
+			}
+		}
+		
+		return new Vector(average);
+	}
+	
 	/**
 	 * Trains Vanilla Perceptron assuming labels are {-1,1}, assuming that we are training for a specific label 'label'
 	 * @param data

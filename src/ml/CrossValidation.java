@@ -58,6 +58,101 @@ public class CrossValidation {
 
 	}
 	
+	public static double[] averagePerceptronCV(ArrayList<Vector> data, int fold, int[] epochs, double[] rates)
+	{
+		int size = data.size();
+		int bound = (int) (size/fold + Math.ceil((size%fold)/(fold*1.0)));
+		ArrayList<ArrayList<Vector>> cross = createCrossValidationSet(data, size, bound);
+		
+		double maxEpoch = 0; double maxRate = 0; double maxAccuracy = 0;
+		
+		for(int epoch : epochs)
+		{
+			for(double rate : rates)
+			{
+				double accuracy = 0;
+
+				//Looping through sets chosen to stay out
+				for(int i = 0; i < fold; i++)
+				{					
+
+					ArrayList<Vector> trainSet = new ArrayList<Vector>();
+					//Collect the training sets
+					for(int j = 0; j < fold; j++)
+					{
+						if(i == j) continue;//Skip the "testing set"
+						trainSet.addAll(cross.get(j));
+					}
+					//Compute the weight vector for the training sets
+					Vector w = Perceptron.trainAverageClassifier(data, epoch, rate);
+					//Compute accuracy of the testing set on the training sets
+					accuracy += collectAccuracy(cross.get(i), w);			
+				}
+				//Get the statistical accuracy
+				accuracy /= fold;
+
+				//Keep track of the best hyperparameters
+				if(accuracy > maxAccuracy)
+				{
+					maxAccuracy = accuracy;
+					maxEpoch = epoch;
+					maxRate = rate;
+				}
+			}
+		}
+		
+		return new double[] {maxEpoch, maxRate};	
+
+	}
+	
+	
+	public static double[] supportVectorCV(ArrayList<Vector> data, int fold, double[] C, double[] rates)
+	{
+		int size = data.size();
+		int bound = (int) (size/fold + Math.ceil((size%fold)/(fold*1.0)));
+		ArrayList<ArrayList<Vector>> cross = createCrossValidationSet(data, size, bound);
+		int epoch = 200;
+		double maxC = 0; double maxRate = 0; double maxAccuracy = 0;
+		
+		for(double c : C)
+		{
+			for(double rate : rates)
+			{
+				double accuracy = 0;
+
+				//Looping through sets chosen to stay out
+				for(int i = 0; i < fold; i++)
+				{					
+
+					ArrayList<Vector> trainSet = new ArrayList<Vector>();
+					//Collect the training sets
+					for(int j = 0; j < fold; j++)
+					{
+						if(i == j) continue;//Skip the "testing set"
+						trainSet.addAll(cross.get(j));
+					}
+					//Compute the weight vector for the training sets
+					Vector w = SVM.trainClassifier(data, epoch, c, rate);
+					//Compute accuracy of the testing set on the training sets
+					accuracy += collectAccuracy(cross.get(i), w);			
+				}
+				//Get the statistical accuracy
+				accuracy /= fold;
+
+				//Keep track of the best hyperparameters
+				if(accuracy > maxAccuracy)
+				{
+					maxAccuracy = accuracy;
+					maxC = c;
+					maxRate = rate;
+				}
+			}
+		}
+		
+		return new double[] {maxC, maxRate};	
+
+	}
+	
 	/**
 	 * Collects the accuracy over an entire test set on the classifier
 	 * @param test

@@ -12,7 +12,7 @@ public class Test {
 	
 	public static void main(String[] args)
 	{
-		ArrayList<Vector> oldtrain = new ArrayList<Vector>();
+		ArrayList<Vector> oldTrain = new ArrayList<Vector>();
 		ArrayList<Vector> oldTest = new ArrayList<Vector>();
 		ArrayList<Vector> astroTrain = new ArrayList<Vector>();
 		ArrayList<Vector> astroTest = new ArrayList<Vector>();
@@ -20,7 +20,7 @@ public class Test {
 		ArrayList<Vector> astroTestScaled = new ArrayList<Vector>();
 
 		try {
-			oldtrain = readOldData("./src/train0.10", 10);
+			oldTrain = readOldData("./src/train0.10", 10);
 			oldTest = readOldData("./src/test0.10", 10);
 			astroTrain = readAstros("./src/original/train");
 			astroTest = readAstros("./src/original/test");
@@ -32,6 +32,8 @@ public class Test {
 		}
 		
 		testPerceptron(astroTrain, astroTest);
+		testAveragePerceptron(astroTrain, astroTest);
+		testSVM(astroTrain, astroTest);
 	}
 	
 	
@@ -63,8 +65,71 @@ public class Test {
 		System.out.println("-------------------------------------------");
 	}
 	
+	private static void testAveragePerceptron(ArrayList<Vector> training, ArrayList<Vector> testing)
+	{
+		System.out.println("------------- Average Perceptron ------------------");
+		int[] epochs = new int[] {10,20,30,50,100,150};
+		double[] rates = new double[] {1,0.1,0.01,0.001,0.0001};
+		
+		double[] hyperparameters = CrossValidation.averagePerceptronCV(training, 10, epochs, rates);
+		
+		System.out.println("Best epoch: " + hyperparameters[0] +"\tBest rate: " + hyperparameters[1]);
+		
+		Vector classifier = Perceptron.trainAverageClassifier(training,(int)hyperparameters[0],hyperparameters[1]);
+		
+		double correct = 0;
+		double total = 0;
+		
+		for(Vector example : testing)
+		{
+			//Predict using sgn(w^Tx)
+			if(Math.signum(classifier.transpose(example)) == example.getLabel())			
+				correct++;
+			total++;
+		}
+		
+		double accuracy = correct/total;
+		
+		System.out.println("Accuracy on the test set is " + accuracy);
+		System.out.println("-------------------------------------------");
+	}
 	
 	
+	private static void testSVM(ArrayList<Vector> training, ArrayList<Vector> testing)
+	{
+		System.out.println("------------- SVM ------------------");
+		double[] C = new double[] {10,20,30,50,100,150, 200, 300, 400, 500};
+		double[] rates = new double[] {1,0.1,0.01,0.001,0.0001};
+		
+		double[] hyperparameters = CrossValidation.supportVectorCV(training, 10, C, rates);
+		
+		System.out.println("Best C: " + hyperparameters[0] +"\tBest rate: " + hyperparameters[1]);
+		
+		Vector classifier = SVM.trainClassifier(training,200,(int)hyperparameters[0],hyperparameters[1]);
+		
+		double correct = 0;
+		double total = 0;
+		
+		for(Vector example : testing)
+		{
+			//Predict using sgn(w^Tx)
+			if(Math.signum(classifier.transpose(example)) == example.getLabel())			
+				correct++;
+			total++;
+		}
+		
+		double accuracy = correct/total;
+		
+		System.out.println("Accuracy on the test set is " + accuracy);
+		System.out.println("-------------------------------------------");
+	}
+	
+	/*
+	 * 
+	 * 										READ DATA
+	 * 
+	 * 
+	 */
 	
 	private static ArrayList<Vector> readOldData(String filename, int dimension) throws IOException
 	{
